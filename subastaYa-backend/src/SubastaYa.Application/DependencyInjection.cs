@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using SubastaYa.Application.Auth.Interfaces;
+using SubastaYa.Application.Auth.Services;
 
 namespace SubastaYa.Application;
 
@@ -6,7 +8,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // TODO: registrar servicios de cada módulo
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 }
