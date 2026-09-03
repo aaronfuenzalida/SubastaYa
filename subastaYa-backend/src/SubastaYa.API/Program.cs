@@ -2,7 +2,9 @@ using Microsoft.OpenApi;
 using SubastaYa.API.Extensions;
 using SubastaYa.API.Middleware;
 using SubastaYa.Application;
+using SubastaYa.Application.Auth.Interfaces;
 using SubastaYa.Infrastructure;
+using SubastaYa.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,13 @@ builder.Services.AddCors(opciones =>
 // TODO: SignalR (sala de subastas en vivo)
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<SubastaYaDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await DbSeeder.SeedAsync(context, passwordHasher);
+}
 
 if (app.Environment.IsDevelopment())
 {
