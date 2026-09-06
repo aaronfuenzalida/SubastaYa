@@ -16,6 +16,7 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             {
                 EmailAlreadyRegisteredException => StatusCodes.Status409Conflict,
                 InvalidCredentialsException => StatusCodes.Status401Unauthorized,
+                WalletNotFoundException => StatusCodes.Status404NotFound,
                 DomainException => StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status500InternalServerError
             };
