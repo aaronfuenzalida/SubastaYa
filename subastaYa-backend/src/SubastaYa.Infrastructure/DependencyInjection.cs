@@ -22,6 +22,8 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IAuctionRepository, AuctionRepository>();
 
         // TODO: registrar el worker de adjudicación
         return services;
