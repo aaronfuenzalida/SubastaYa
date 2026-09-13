@@ -7,7 +7,9 @@ namespace SubastaYa.Infrastructure.Persistence.Repositories;
 public class WalletRepository(SubastaYaDbContext context) : IWalletRepository
 {
     public Task<Wallet?> GetByUserIdAsync(int userId) =>
-        context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
+        context.Wallets
+            .Include(w => w.User)
+            .FirstOrDefaultAsync(w => w.UserId == userId);
 
     public Task<List<LedgerEntry>> GetTransactionsAsync(int walletId) =>
         context.LedgerEntries
