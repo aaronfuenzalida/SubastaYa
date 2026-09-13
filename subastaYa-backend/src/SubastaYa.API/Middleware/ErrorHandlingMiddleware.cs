@@ -20,6 +20,8 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
                 AuctionNotFoundException => StatusCodes.Status404NotFound,
                 CategoryNotFoundException => StatusCodes.Status404NotFound,
                 InvalidAuctionDatesException => StatusCodes.Status400BadRequest,
+                InsufficientFundsException => StatusCodes.Status422UnprocessableEntity,
+                ConcurrencyConflictException => StatusCodes.Status409Conflict,
                 DomainException => StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status500InternalServerError
             };
