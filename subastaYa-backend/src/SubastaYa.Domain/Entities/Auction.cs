@@ -15,7 +15,7 @@ public class Auction
     public DateTime StartsAt { get; set; }
     public DateTime EndsAt { get; set; }
     public AuctionStatus Status { get; set; }
-    public uint Version { get; set; }
+    public int Version { get; set; }
     public User Seller { get; set; } = null!;
     public Category Category { get; set; } = null!;
     public List<Bid> Bids { get; set; } = [];
