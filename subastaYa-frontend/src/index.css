@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Inter", sans-serif;
+
+  /* Paleta de la marca: azul profundo con acento eléctrico sobre blanco */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dde9fe;
+  --color-brand-200: #c2d6fd;
+  --color-brand-300: #98bafa;
+  --color-brand-400: #6694f5;
+  --color-brand-500: #416fef;
+  --color-brand-600: #2b4fe3;
+  --color-brand-700: #233dd0;
+  --color-brand-800: #2234a9;
+  --color-brand-900: #213185;
+  --color-brand-950: #182051;
+
+  --color-ink: #101b3e;
+  --color-mist: #f5f8fd;
+}
+
+body {
+  background-color: var(--color-mist);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
