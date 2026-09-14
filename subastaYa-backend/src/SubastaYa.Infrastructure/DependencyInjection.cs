@@ -1,9 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SubastaYa.Application.Auth.Interfaces;
 using SubastaYa.Application.Common.Interfaces;
 using SubastaYa.Infrastructure.Auth;
+using SubastaYa.Infrastructure.BackgroundJobs;
 using SubastaYa.Infrastructure.Persistence;
 using SubastaYa.Infrastructure.Persistence.Repositories;
 
@@ -27,7 +28,8 @@ public static class DependencyInjection
         services.AddScoped<IBidRepository, BidRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // TODO: registrar el worker de adjudicación
+        services.AddHostedService<AuctionFinalizerWorker>();
+
         return services;
     }
 }

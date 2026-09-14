@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IAuctionService, AuctionService>();
+        services.AddScoped<IAuctionFinalizerService, AuctionFinalizerService>();
         services.AddScoped<IBidService, BidService>();
         return services;
     }
