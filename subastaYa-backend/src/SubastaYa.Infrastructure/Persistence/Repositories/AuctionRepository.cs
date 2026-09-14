@@ -3,6 +3,7 @@ using SubastaYa.Application.Auctions.Dtos;
 using SubastaYa.Application.Common.Dtos;
 using SubastaYa.Application.Common.Interfaces;
 using SubastaYa.Domain.Entities;
+using SubastaYa.Domain.Enums;
 
 namespace SubastaYa.Infrastructure.Persistence.Repositories;
 
@@ -70,6 +71,13 @@ public class AuctionRepository(SubastaYaDbContext context) : IAuctionRepository
             .Include(a => a.Seller)
             .Include(a => a.Bids)
             .FirstOrDefaultAsync(a => a.Id == id);
+
+    // Este es el query para el que existe el indice (Status, EndsAt)
+    public Task<List<Auction>> GetExpiredActiveAsync(DateTime now) =>
+        context.Auctions
+            .Where(a => a.Status == AuctionStatus.Active && a.EndsAt <= now)
+            .Include(a => a.Bids)
+            .ToListAsync();
 
     public async Task AddAsync(Auction auction)
     {
