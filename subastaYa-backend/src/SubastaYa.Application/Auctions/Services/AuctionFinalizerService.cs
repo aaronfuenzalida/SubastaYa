@@ -1,5 +1,7 @@
+using System.Text.Json;
 using SubastaYa.Application.Auctions.Interfaces;
 using SubastaYa.Application.Common.Interfaces;
+using SubastaYa.Domain;
 using SubastaYa.Domain.Entities;
 using SubastaYa.Domain.Enums;
 using SubastaYa.Domain.Exceptions;
@@ -9,6 +11,7 @@ namespace SubastaYa.Application.Auctions.Services;
 public class AuctionFinalizerService(
     IAuctionRepository auctions,
     IWalletRepository wallets,
+    IAuditLogRepository auditLogs,
     IUnitOfWork unitOfWork) : IAuctionFinalizerService
 {
     public async Task ProcessExpiredAuctionsAsync()
@@ -29,7 +32,22 @@ public class AuctionFinalizerService(
                 auction.Status = AuctionStatus.Finished;
             }
 
-            // TODO (auditoria): registrar el cambio de estado ejecutado por el worker
+            // UserId null = lo ejecuto el worker, no un usuario (se especifica en el diagrama del trabajo)
+            auditLogs.Add(new AuditLog
+            {
+                Entity = "Auction",
+                EntityId = auction.Id,
+                Action = AuditActions.StatusChanged,
+                UserId = null,
+                DetailsJson = JsonSerializer.Serialize(new
+                {
+                    oldStatus = nameof(AuctionStatus.Active),
+                    newStatus = auction.Status.ToString(),
+                    settledAmount = winningBid?.Amount
+                }),
+                CreatedAt = DateTime.UtcNow
+            });
+
             auction.Version++;
 
             // Un save por subasta :si una liquidacion falla, las anteriores ya

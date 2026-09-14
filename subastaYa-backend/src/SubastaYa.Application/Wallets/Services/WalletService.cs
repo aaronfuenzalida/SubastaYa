@@ -1,13 +1,15 @@
+using System.Text.Json;
 using SubastaYa.Application.Common.Interfaces;
 using SubastaYa.Application.Wallets.Dtos;
 using SubastaYa.Application.Wallets.Interfaces;
+using SubastaYa.Domain;
 using SubastaYa.Domain.Entities;
 using SubastaYa.Domain.Enums;
 using SubastaYa.Domain.Exceptions;
 
 namespace SubastaYa.Application.Wallets.Services;
 
-public class WalletService(IWalletRepository wallets) : IWalletService
+public class WalletService(IWalletRepository wallets, IAuditLogRepository auditLogs) : IWalletService
 {
     public async Task<WalletBalanceDto> GetBalanceAsync(int userId)
     {
@@ -28,8 +30,18 @@ public class WalletService(IWalletRepository wallets) : IWalletService
             CreatedAt = DateTime.UtcNow
         });
 
-        // Un unico SaveChanges: el saldo nuevo y su asiento entran en la misma transaccion,
-        // nunca puede quedar uno sin el otro.
+        auditLogs.Add(new AuditLog
+        {
+            Entity = "Wallet",
+            EntityId = wallet.Id,
+            Action = AuditActions.ManualDeposit,
+            UserId = userId,
+            DetailsJson = JsonSerializer.Serialize(new { amount = dto.Amount }),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Un unico SaveChanges: el saldo nuevo, su asiento y el audit entran en la
+        // misma transaccion, nunca puede quedar uno sin los otros.
         await wallets.SaveChangesAsync();
 
         return ToBalanceDto(wallet);
