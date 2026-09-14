@@ -1,6 +1,8 @@
+using System.Text.Json;
 using SubastaYa.Application.Bids.Dtos;
 using SubastaYa.Application.Bids.Interfaces;
 using SubastaYa.Application.Common.Interfaces;
+using SubastaYa.Domain;
 using SubastaYa.Domain.Entities;
 using SubastaYa.Domain.Enums;
 using SubastaYa.Domain.Exceptions;
@@ -11,6 +13,7 @@ public class BidService(
     IAuctionRepository auctions,
     IWalletRepository wallets,
     IBidRepository bids,
+    IAuditLogRepository auditLogs,
     IUnitOfWork unitOfWork) : IBidService
 {
     private const int AntiSnipingWindowSeconds = 60;
@@ -86,9 +89,19 @@ public class BidService(
         var timeExtended = false;
         if ((auction.EndsAt - now).TotalSeconds <= AntiSnipingWindowSeconds)
         {
+            var oldEndsAt = auction.EndsAt;
             auction.EndsAt = auction.EndsAt.AddMinutes(AntiSnipingExtensionMinutes);
             timeExtended = true;
-            // TODO : registrar la extension en AuditLogs
+
+            auditLogs.Add(new AuditLog
+            {
+                Entity = "Auction",
+                EntityId = auction.Id,
+                Action = AuditActions.TimeExtended,
+                UserId = bidderId,
+                DetailsJson = JsonSerializer.Serialize(new { oldEndsAt, newEndsAt = auction.EndsAt }),
+                CreatedAt = now
+            });
         }
 
         // Toda puja escribe la fila de la subasta para que
