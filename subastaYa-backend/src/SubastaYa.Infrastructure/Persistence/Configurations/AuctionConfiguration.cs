@@ -19,7 +19,7 @@ public class AuctionConfiguration : IEntityTypeConfiguration<Auction>
 
         builder.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
 
-        builder.Property(a => a.Version).IsRowVersion();
+        builder.Property(a => a.Version).IsConcurrencyToken();
 
         builder.HasOne(a => a.Seller)
             .WithMany()

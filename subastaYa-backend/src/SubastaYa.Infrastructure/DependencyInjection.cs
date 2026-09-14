@@ -1,9 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SubastaYa.Application.Auth.Interfaces;
 using SubastaYa.Application.Common.Interfaces;
 using SubastaYa.Infrastructure.Auth;
+using SubastaYa.Infrastructure.BackgroundJobs;
 using SubastaYa.Infrastructure.Persistence;
 using SubastaYa.Infrastructure.Persistence.Repositories;
 
@@ -24,8 +25,12 @@ public static class DependencyInjection
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IAuctionRepository, AuctionRepository>();
+        services.AddScoped<IBidRepository, BidRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // TODO: registrar el worker de adjudicación
+        services.AddHostedService<AuctionFinalizerWorker>();
+
         return services;
     }
 }

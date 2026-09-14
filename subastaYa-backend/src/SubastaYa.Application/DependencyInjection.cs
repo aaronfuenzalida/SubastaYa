@@ -7,6 +7,8 @@ using SubastaYa.Application.Categories.Interfaces;
 using SubastaYa.Application.Categories.Services;
 using SubastaYa.Application.Auctions.Interfaces;
 using SubastaYa.Application.Auctions.Services;
+using SubastaYa.Application.Bids.Interfaces;
+using SubastaYa.Application.Bids.Services;
 
 namespace SubastaYa.Application;
 
@@ -18,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IAuctionService, AuctionService>();
+        services.AddScoped<IAuctionFinalizerService, AuctionFinalizerService>();
+        services.AddScoped<IBidService, BidService>();
         return services;
     }
 }
