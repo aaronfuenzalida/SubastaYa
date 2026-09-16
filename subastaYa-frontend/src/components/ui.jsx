@@ -12,6 +12,24 @@ export function Field({ label, ...props }) {
   )
 }
 
+export function Select({ label, children, ...props }) {
+  return (
+    <label className="block">
+      {label && (
+        <span className="mb-1 block text-[13px] font-medium text-brand-950/75 dark:text-white/70">
+          {label}
+        </span>
+      )}
+      <select
+        {...props}
+        className="w-full rounded-md border border-brand-950/15 bg-white px-3 py-2 text-sm text-brand-950 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 dark:border-white/15 dark:bg-night-soft dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400/20"
+      >
+        {children}
+      </select>
+    </label>
+  )
+}
+
 export function Spinner({ className = 'size-4' }) {
   return (
     <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
