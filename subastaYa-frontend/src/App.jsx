@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import ThemeToggle from './components/ThemeToggle'
 import RequireAuth from './components/RequireAuth'
+import Catalog from './pages/Catalog'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Placeholder from './pages/Placeholder'
@@ -12,7 +13,7 @@ export default function App() {
       <Navbar />
       <main>
         <Routes>
-          <Route path="/" element={<Placeholder title="Catálogo de subastas" />} />
+          <Route path="/" element={<Catalog />} />
           <Route path="/auctions/:id" element={<Placeholder title="Sala de subasta" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
