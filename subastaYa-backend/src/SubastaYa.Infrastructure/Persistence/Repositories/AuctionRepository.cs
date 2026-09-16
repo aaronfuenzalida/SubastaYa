@@ -29,10 +29,12 @@ public class AuctionRepository(SubastaYaDbContext context) : IAuctionRepository
         if (filter.MaxPrice is not null)
             query = query.Where(a => (a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice) <= filter.MaxPrice);
 
-        // El orden se fija antes de pagina ya que paginar sin orden estable mezcla las paginas
+        // El orden se fija antes de paginar ya que paginar sin orden estable mezcla las paginas
+        // En el filtro"termina antes" las ya vencidas van al final.
+        var now = DateTime.UtcNow;
         query = filter.Sort == "highestPrice"
             ? query.OrderByDescending(a => a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice)
-            : query.OrderBy(a => a.EndsAt);
+            : query.OrderBy(a => a.EndsAt <= now).ThenBy(a => a.EndsAt);
 
         // Total de la busqueda completa (sin Skip/Take), el front lo va a necesitar para el paginador
         var total = await query.CountAsync();
