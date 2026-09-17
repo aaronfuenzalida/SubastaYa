@@ -11,9 +11,10 @@ function format(ms) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-// Cuenta regresiva viva. Pensada para fondo oscuro (el chip de las cards):
-// ultimo minuto en rojo pulsante, ultimos 5 en ambar (zona critica del TP).
-export default function Countdown({ endsAt }) {
+// Cuenta regresiva viva: ultimo minuto en rojo pulsante, ultimos 5 en ambar
+// (zona critica del TP). "light" usa tonos para fondo claro (la sala en vivo);
+// el default esta pensado para el chip oscuro de las cards.
+export default function Countdown({ endsAt, light = false }) {
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -27,13 +28,16 @@ export default function Countdown({ endsAt }) {
   const urgent = msLeft <= 60_000
   const warning = !urgent && msLeft <= 5 * 60_000
 
+  const urgentClasses = light ? 'text-red-600 dark:text-red-400' : 'text-red-300'
+  const warningClasses = light ? 'text-amber-600 dark:text-amber-400' : 'text-amber-300'
+
   return (
     <span
       className={`tabular-nums ${
         urgent
-          ? 'animate-pulse font-semibold text-red-300'
+          ? `animate-pulse font-semibold ${urgentClasses}`
           : warning
-            ? 'font-medium text-amber-300'
+            ? `font-medium ${warningClasses}`
             : ''
       }`}
     >
