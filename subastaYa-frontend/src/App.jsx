@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import ThemeToggle from './components/ThemeToggle'
 import RequireAuth from './components/RequireAuth'
 import Catalog from './pages/Catalog'
+import CreateAuction from './pages/CreateAuction'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Placeholder from './pages/Placeholder'
@@ -21,7 +22,7 @@ export default function App() {
             path="/auctions/new"
             element={
               <RequireAuth>
-                <Placeholder title="Publicar subasta" />
+                <CreateAuction />
               </RequireAuth>
             }
           />
