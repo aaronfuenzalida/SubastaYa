@@ -22,6 +22,7 @@ public class AuctionFinalizerWorker(
                 // el worker es singleton pero el DbContext es scoped
                 using var scope = scopeFactory.CreateScope();
                 var finalizer = scope.ServiceProvider.GetRequiredService<IAuctionFinalizerService>();
+                await finalizer.StartScheduledAuctionsAsync();
                 await finalizer.ProcessExpiredAuctionsAsync();
             }
             catch (Exception exception)
