@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import ThemeToggle from './components/ThemeToggle'
 import RequireAuth from './components/RequireAuth'
+import AuctionDetail from './pages/AuctionDetail'
 import Catalog from './pages/Catalog'
 import CreateAuction from './pages/CreateAuction'
 import Login from './pages/Login'
@@ -15,7 +16,7 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Catalog />} />
-          <Route path="/auctions/:id" element={<Placeholder title="Sala de subasta" />} />
+          <Route path="/auctions/:id" element={<AuctionDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
