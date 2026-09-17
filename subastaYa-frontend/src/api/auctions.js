@@ -11,3 +11,7 @@ export function getAuctions(params = {}) {
 export function getCategories() {
   return api('/categories')
 }
+
+export function createAuction(data) {
+  return api('/auctions', { method: 'POST', body: data })
+}

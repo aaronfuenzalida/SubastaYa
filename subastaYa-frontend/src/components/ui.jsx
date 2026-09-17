@@ -12,6 +12,20 @@ export function Field({ label, ...props }) {
   )
 }
 
+export function TextArea({ label, ...props }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[13px] font-medium text-brand-950/75 dark:text-white/70">
+        {label}
+      </span>
+      <textarea
+        {...props}
+        className="w-full resize-y rounded-md border border-brand-950/15 bg-white px-3 py-2 text-[15px] text-brand-950 outline-none transition placeholder:text-brand-950/35 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 dark:border-white/15 dark:bg-night-soft dark:text-white dark:placeholder:text-white/30 dark:focus:border-brand-400 dark:focus:ring-brand-400/20"
+      />
+    </label>
+  )
+}
+
 export function Select({ label, children, ...props }) {
   return (
     <label className="block">
