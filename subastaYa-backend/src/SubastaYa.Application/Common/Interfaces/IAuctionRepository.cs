@@ -9,5 +9,6 @@ public interface IAuctionRepository
     Task<PagedResultDto<AuctionSummaryDto>> GetPagedAsync(AuctionFilterDto filter);
     Task<Auction?> GetByIdAsync(int id);
     Task<List<Auction>> GetExpiredActiveAsync(DateTime now);
+    Task<List<Auction>> GetScheduledStartedAsync(DateTime now);
     Task AddAsync(Auction auction);
 }

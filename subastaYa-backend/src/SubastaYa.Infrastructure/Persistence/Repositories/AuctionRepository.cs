@@ -74,6 +74,11 @@ public class AuctionRepository(SubastaYaDbContext context) : IAuctionRepository
             .Include(a => a.Bids)
             .FirstOrDefaultAsync(a => a.Id == id);
 
+    public Task<List<Auction>> GetScheduledStartedAsync(DateTime now) =>
+        context.Auctions
+            .Where(a => a.Status == AuctionStatus.Scheduled && a.StartsAt <= now)
+            .ToListAsync();
+
     // Este es el query para el que existe el indice (Status, EndsAt)
     public Task<List<Auction>> GetExpiredActiveAsync(DateTime now) =>
         context.Auctions
