@@ -14,5 +14,6 @@ public record AuctionDetailDto(
     int BidsCount,
     DateTime StartsAt,
     DateTime EndsAt,
-    string Status
+    string Status,
+    bool CurrentUserIsTopBidder
 );
