@@ -110,8 +110,10 @@ export default function AuctionDetail() {
 
   const isActive = auction.status === 'Active'
   const hasEnded = new Date(auction.endsAt).getTime() <= Date.now()
-  const isLeading = myTopBid > 0 && auction.currentPrice === myTopBid
-  const wasOutbid = myTopBid > 0 && !isLeading
+  // la verdad viene del server (sobrevive refrescos) myTopBid solo detecta "te superaron"
+  const isLeading = auction.currentUserIsTopBidder && isActive && !hasEnded
+  const hasWon = auction.currentUserIsTopBidder && auction.status === 'Finished'
+  const wasOutbid = myTopBid > 0 && !auction.currentUserIsTopBidder
   const isOwnAuction = user && user.name === auction.sellerName
   const canBid = user && isActive && !hasEnded && !isOwnAuction && !isLeading
 
@@ -204,6 +206,11 @@ export default function AuctionDetail() {
                 {auction.bidsCount} oferta{auction.bidsCount === 1 ? '' : 's'}
               </p>
 
+              {hasWon && (
+                <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  🏆 ¡Ganaste esta subasta por {formatMoney(auction.currentPrice)}!
+                </div>
+              )}
               {isLeading && (
                 <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                   🏆 Estás liderando esta subasta
