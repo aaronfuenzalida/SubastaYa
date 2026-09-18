@@ -13,6 +13,12 @@ public class AuctionService(IAuctionRepository auctions, ICategoryRepository cat
     public Task<PagedResultDto<AuctionSummaryDto>> GetAuctionsAsync(AuctionFilterDto filter) =>
         auctions.GetPagedAsync(filter);
 
+    public Task<List<ParticipationDto>> GetParticipationsAsync(int userId) =>
+        auctions.GetParticipationsAsync(userId);
+
+    public Task<List<AuctionSummaryDto>> GetMyAuctionsAsync(int sellerId) =>
+        auctions.GetBySellerAsync(sellerId);
+
     public async Task<AuctionDetailDto> GetByIdAsync(int id, int? currentUserId = null)
     {
         var auction = await auctions.GetByIdAsync(id) ?? throw new AuctionNotFoundException(id);

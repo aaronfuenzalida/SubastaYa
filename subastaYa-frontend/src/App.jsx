@@ -7,6 +7,7 @@ import Catalog from './pages/Catalog'
 import CreateAuction from './pages/CreateAuction'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import MyActivity from './pages/MyActivity'
 import Placeholder from './pages/Placeholder'
 import Wallet from './pages/Wallet'
 
@@ -40,7 +41,7 @@ export default function App() {
             path="/activity"
             element={
               <RequireAuth>
-                <Placeholder title="Mis actividades" />
+                <MyActivity />
               </RequireAuth>
             }
           />
