@@ -8,6 +8,7 @@ import CreateAuction from './pages/CreateAuction'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Placeholder from './pages/Placeholder'
+import Wallet from './pages/Wallet'
 
 export default function App() {
   return (
@@ -31,7 +32,7 @@ export default function App() {
             path="/wallet"
             element={
               <RequireAuth>
-                <Placeholder title="Billetera" />
+                <Wallet />
               </RequireAuth>
             }
           />
