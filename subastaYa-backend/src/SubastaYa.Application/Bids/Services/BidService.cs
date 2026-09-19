@@ -14,6 +14,7 @@ public class BidService(
     IWalletRepository wallets,
     IBidRepository bids,
     IAuditLogRepository auditLogs,
+    IAuctionNotifier notifier,
     IUnitOfWork unitOfWork) : IBidService
 {
     private const int AntiSnipingWindowSeconds = 60;
@@ -110,12 +111,17 @@ public class BidService(
 
         await unitOfWork.SaveChangesAsync();
 
-        return new BidResultDto(
+        var result = new BidResultDto(
             new BidDto(bid.Id, bid.Amount, Anonymize(bidderWallet.User.Name), bid.PlacedAt),
             bid.Amount,
             bid.Amount + auction.MinIncrement,
             auction.EndsAt,
             timeExtended);
+
+        // Despues del commit: solo se anuncian cambios que ya son reales
+        await notifier.BidPlacedAsync(auction.Id, result);
+
+        return result;
     }
 
     public async Task<List<BidDto>> GetBidsAsync(int auctionId)

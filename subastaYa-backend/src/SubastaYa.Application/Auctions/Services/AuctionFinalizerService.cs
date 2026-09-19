@@ -12,6 +12,7 @@ public class AuctionFinalizerService(
     IAuctionRepository auctions,
     IWalletRepository wallets,
     IAuditLogRepository auditLogs,
+    IAuctionNotifier notifier,
     IUnitOfWork unitOfWork) : IAuctionFinalizerService
 {
     // Las Scheduled para las cuales su hora de inicio llego pasan a Active
@@ -39,6 +40,7 @@ public class AuctionFinalizerService(
 
             auction.Version++;
             await unitOfWork.SaveChangesAsync();
+            await notifier.StatusChangedAsync(auction.Id, auction.Status.ToString());
         }
     }
 
@@ -81,6 +83,7 @@ public class AuctionFinalizerService(
             // Un save por subasta :si una liquidacion falla, las anteriores ya
             // quedaron confirmadas y solo esta se reintenta en el proximo tick.
             await unitOfWork.SaveChangesAsync();
+            await notifier.StatusChangedAsync(auction.Id, auction.Status.ToString());
         }
     }
 
