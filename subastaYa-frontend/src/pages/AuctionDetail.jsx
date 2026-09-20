@@ -6,9 +6,8 @@ import { getBids, placeBid } from '../api/bids'
 import { useAuth } from '../auth/AuthContext'
 import Countdown from '../components/Countdown'
 import { PrimaryButton } from '../components/ui'
+import { createAuctionConnection } from '../lib/realtime'
 import { formatDateTime, formatMoney, formatTime } from '../lib/format'
-
-const POLL_MS = 3000
 
 export default function AuctionDetail() {
   const { id } = useParams()
@@ -20,30 +19,17 @@ export default function AuctionDetail() {
   const [placing, setPlacing] = useState(false)
   const [myTopBid, setMyTopBid] = useState(0)
 
-  // refs para que el polling (que corre fuera del ciclo de render) lea valores frescos
-  const myTopBidRef = useRef(0)
-  const prevRef = useRef({ endsAt: null, currentPrice: null })
+  // refs para que los handlers de SignalR (fuera del ciclo de render) lean valores frescos
+  const auctionRef = useRef(null)
+  const knownBidIds = useRef(new Set())
   useEffect(() => {
-    myTopBidRef.current = myTopBid
-  }, [myTopBid])
+    auctionRef.current = auction
+  }, [auction])
 
   const load = useCallback(async () => {
     try {
       const [auctionData, bidsData] = await Promise.all([getAuction(id), getBids(id)])
-      const prev = prevRef.current
-
-      // Deteccion de eventos entre polls: extension anti-sniping y "te superaron"
-      if (prev.endsAt && new Date(auctionData.endsAt) > new Date(prev.endsAt))
-        toast('⏱ Subasta extendida 2 minutos (anti-sniping)')
-      if (
-        prev.currentPrice != null &&
-        auctionData.currentPrice > prev.currentPrice &&
-        myTopBidRef.current > 0 &&
-        prev.currentPrice === myTopBidRef.current
-      )
-        toast('📉 ¡Te superaron! Ofertá de nuevo para recuperar el liderazgo')
-
-      prevRef.current = { endsAt: auctionData.endsAt, currentPrice: auctionData.currentPrice }
+      knownBidIds.current = new Set(bidsData.map((b) => b.id))
       setAuction(auctionData)
       setBids(bidsData)
     } catch (error) {
@@ -51,16 +37,68 @@ export default function AuctionDetail() {
     }
   }, [id])
 
+  // Carga inicial + suscripcion en tiempo real (reemplaza al short-polling)
   useEffect(() => {
     load()
-    const timer = setInterval(load, POLL_MS)
-    return () => clearInterval(timer)
-  }, [load])
+
+    // StrictMode monta dos veces en dev: el primer start() queda abortado por el
+    // cleanup y su promesa rechaza; "disposed" evita mostrar ese falso error.
+    let disposed = false
+    const connection = createAuctionConnection()
+
+    connection.on('BidPlaced', (result) => {
+      // mi propia puja ya se aplico con la respuesta del POST: el broadcast se ignora
+      if (knownBidIds.current.has(result.bid.id)) return
+      knownBidIds.current.add(result.bid.id)
+
+      const current = auctionRef.current
+      if (current) {
+        if (new Date(result.endsAt) > new Date(current.endsAt))
+          toast('⏱ Subasta extendida 2 minutos (anti-sniping)')
+        if (current.currentUserIsTopBidder)
+          toast('📉 ¡Te superaron! Ofertá de nuevo para recuperar el liderazgo')
+      }
+
+      setBids((prev) => [result.bid, ...prev])
+      setAuction((a) =>
+        a
+          ? {
+              ...a,
+              currentPrice: result.currentPrice,
+              minNextBid: result.minNextBid,
+              endsAt: result.endsAt,
+              bidsCount: a.bidsCount + 1,
+              // la puja de otro me quita el liderazgo
+              currentUserIsTopBidder: false,
+            }
+          : a,
+      )
+    })
+
+    // El worker cerro o activo la subasta: refetch completo (trae el flag de ganador)
+    connection.on('AuctionStatusChanged', () => load())
+
+    // Si la conexion se cayo, pudimos perder eventos: se resincroniza todo
+    connection.onreconnected(() => load())
+
+    connection
+      .start()
+      .then(() => connection.invoke('JoinAuction', Number(id)))
+      .catch(() => {
+        if (!disposed) toast.error('Sin conexión en tiempo real — recargá la página')
+      })
+
+    return () => {
+      disposed = true
+      connection.stop()
+    }
+  }, [id, load])
 
   const submitBid = async (value) => {
     setPlacing(true)
     try {
       const result = await placeBid(id, Number(value))
+      knownBidIds.current.add(result.bid.id)
       setMyTopBid(result.bid.amount)
       setAuction((a) => ({
         ...a,
@@ -68,9 +106,9 @@ export default function AuctionDetail() {
         minNextBid: result.minNextBid,
         endsAt: result.endsAt,
         bidsCount: a.bidsCount + 1,
+        currentUserIsTopBidder: true,
       }))
       setBids((prev) => [result.bid, ...prev])
-      prevRef.current = { endsAt: result.endsAt, currentPrice: result.currentPrice }
       setAmount('')
       toast.success('¡Oferta registrada!')
       if (result.timeExtended) toast('⏱ Cierre extendido 2 minutos (anti-sniping)')
@@ -110,7 +148,6 @@ export default function AuctionDetail() {
 
   const isActive = auction.status === 'Active'
   const hasEnded = new Date(auction.endsAt).getTime() <= Date.now()
-  // la verdad viene del server (sobrevive refrescos) myTopBid solo detecta "te superaron"
   const isLeading = auction.currentUserIsTopBidder && isActive && !hasEnded
   const hasWon = auction.currentUserIsTopBidder && auction.status === 'Finished'
   const wasOutbid = myTopBid > 0 && !auction.currentUserIsTopBidder
