@@ -13,10 +13,16 @@ public class AuctionService(IAuctionRepository auctions, ICategoryRepository cat
     public Task<PagedResultDto<AuctionSummaryDto>> GetAuctionsAsync(AuctionFilterDto filter) =>
         auctions.GetPagedAsync(filter);
 
-    public async Task<AuctionDetailDto> GetByIdAsync(int id)
+    public Task<List<ParticipationDto>> GetParticipationsAsync(int userId) =>
+        auctions.GetParticipationsAsync(userId);
+
+    public Task<List<AuctionSummaryDto>> GetMyAuctionsAsync(int sellerId) =>
+        auctions.GetBySellerAsync(sellerId);
+
+    public async Task<AuctionDetailDto> GetByIdAsync(int id, int? currentUserId = null)
     {
         var auction = await auctions.GetByIdAsync(id) ?? throw new AuctionNotFoundException(id);
-        return ToDetailDto(auction);
+        return ToDetailDto(auction, currentUserId);
     }
 
     public async Task<AuctionDetailDto> CreateAsync(int sellerId, CreateAuctionDto dto)
@@ -51,9 +57,10 @@ public class AuctionService(IAuctionRepository auctions, ICategoryRepository cat
         return await GetByIdAsync(auction.Id);
     }
 
-    private static AuctionDetailDto ToDetailDto(Auction a)
+    private static AuctionDetailDto ToDetailDto(Auction a, int? currentUserId = null)
     {
-        var currentPrice = a.Bids.Count > 0 ? a.Bids.Max(b => b.Amount) : a.BasePrice;
+        var topBid = a.Bids.OrderByDescending(b => b.Amount).FirstOrDefault();
+        var currentPrice = topBid?.Amount ?? a.BasePrice;
 
         return new AuctionDetailDto(
             a.Id,
@@ -69,6 +76,9 @@ public class AuctionService(IAuctionRepository auctions, ICategoryRepository cat
             a.Bids.Count,
             a.StartsAt,
             a.EndsAt,
-            a.Status.ToString());
+            a.Status.ToString(),
+            // Si esta activa significa "estas liderando",
+            // Si esta finalizada significa "ganaste".
+            topBid is not null && currentUserId == topBid.BidderId);
     }
 }

@@ -29,10 +29,12 @@ public class AuctionRepository(SubastaYaDbContext context) : IAuctionRepository
         if (filter.MaxPrice is not null)
             query = query.Where(a => (a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice) <= filter.MaxPrice);
 
-        // El orden se fija antes de pagina ya que paginar sin orden estable mezcla las paginas
+        // El orden se fija antes de paginar ya que paginar sin orden estable mezcla las paginas
+        // En el filtro"termina antes" las ya vencidas van al final.
+        var now = DateTime.UtcNow;
         query = filter.Sort == "highestPrice"
             ? query.OrderByDescending(a => a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice)
-            : query.OrderBy(a => a.EndsAt);
+            : query.OrderBy(a => a.EndsAt <= now).ThenBy(a => a.EndsAt);
 
         // Total de la busqueda completa (sin Skip/Take), el front lo va a necesitar para el paginador
         var total = await query.CountAsync();
@@ -65,12 +67,67 @@ public class AuctionRepository(SubastaYaDbContext context) : IAuctionRepository
         return new PagedResultDto<AuctionSummaryDto>(items, filter.Page, filter.PageSize, total);
     }
 
+    // "Subastas donde participe" el postor ve su mejor oferta contra la lider
+    public async Task<List<ParticipationDto>> GetParticipationsAsync(int userId)
+    {
+        var rows = await context.Auctions
+            .Where(a => a.Bids.Any(b => b.BidderId == userId))
+            .OrderByDescending(a => a.EndsAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.ImageUrl,
+                a.Status,
+                a.EndsAt,
+                CurrentPrice = a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice,
+                MyTopBid = a.Bids.Where(b => b.BidderId == userId).Max(b => b.Amount),
+                TopBidderId = a.Bids.OrderByDescending(b => b.Amount).Select(b => b.BidderId).FirstOrDefault()
+            })
+            .ToListAsync();
+
+        return rows
+            .Select(r => new ParticipationDto(r.Id, r.Title, r.ImageUrl, r.Status.ToString(),
+                r.EndsAt, r.CurrentPrice, r.MyTopBid, r.TopBidderId == userId))
+            .ToList();
+    }
+
+    // "Mis publicaciones" (reutiliza el DTO de card del catalogo)
+    public async Task<List<AuctionSummaryDto>> GetBySellerAsync(int sellerId)
+    {
+        var rows = await context.Auctions
+            .Where(a => a.SellerId == sellerId)
+            .OrderByDescending(a => a.EndsAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                CategoryName = a.Category.Name,
+                a.ImageUrl,
+                CurrentPrice = a.Bids.Max(b => (decimal?)b.Amount) ?? a.BasePrice,
+                BidsCount = a.Bids.Count,
+                a.EndsAt,
+                a.Status
+            })
+            .ToListAsync();
+
+        return rows
+            .Select(r => new AuctionSummaryDto(r.Id, r.Title, r.CategoryName, r.ImageUrl,
+                r.CurrentPrice, r.BidsCount, r.EndsAt, r.Status.ToString()))
+            .ToList();
+    }
+
     public Task<Auction?> GetByIdAsync(int id) =>
         context.Auctions
             .Include(a => a.Category)
             .Include(a => a.Seller)
             .Include(a => a.Bids)
             .FirstOrDefaultAsync(a => a.Id == id);
+
+    public Task<List<Auction>> GetScheduledStartedAsync(DateTime now) =>
+        context.Auctions
+            .Where(a => a.Status == AuctionStatus.Scheduled && a.StartsAt <= now)
+            .ToListAsync();
 
     // Este es el query para el que existe el indice (Status, EndsAt)
     public Task<List<Auction>> GetExpiredActiveAsync(DateTime now) =>

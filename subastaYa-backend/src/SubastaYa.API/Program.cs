@@ -1,8 +1,11 @@
 using Microsoft.OpenApi;
 using SubastaYa.API.Extensions;
+using SubastaYa.API.Hubs;
 using SubastaYa.API.Middleware;
+using SubastaYa.API.Realtime;
 using SubastaYa.Application;
 using SubastaYa.Application.Auth.Interfaces;
+using SubastaYa.Application.Common.Interfaces;
 using SubastaYa.Infrastructure;
 using SubastaYa.Infrastructure.Persistence;
 
@@ -37,7 +40,8 @@ builder.Services.AddCors(opciones =>
                 .AllowAnyHeader()
                 .AllowAnyMethod()));
 
-// TODO: SignalR (sala de subastas en vivo)
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IAuctionNotifier, SignalRAuctionNotifier>();
 
 var app = builder.Build();
 
@@ -61,5 +65,6 @@ app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<AuctionHub>("/hubs/auctions");
 
 app.Run();

@@ -12,8 +12,38 @@ public class AuctionFinalizerService(
     IAuctionRepository auctions,
     IWalletRepository wallets,
     IAuditLogRepository auditLogs,
+    IAuctionNotifier notifier,
     IUnitOfWork unitOfWork) : IAuctionFinalizerService
 {
+    // Las Scheduled para las cuales su hora de inicio llego pasan a Active
+    public async Task StartScheduledAuctionsAsync()
+    {
+        var toStart = await auctions.GetScheduledStartedAsync(DateTime.UtcNow);
+
+        foreach (var auction in toStart)
+        {
+            auction.Status = AuctionStatus.Active;
+
+            auditLogs.Add(new AuditLog
+            {
+                Entity = "Auction",
+                EntityId = auction.Id,
+                Action = AuditActions.StatusChanged,
+                UserId = null,
+                DetailsJson = JsonSerializer.Serialize(new
+                {
+                    oldStatus = nameof(AuctionStatus.Scheduled),
+                    newStatus = nameof(AuctionStatus.Active)
+                }),
+                CreatedAt = DateTime.UtcNow
+            });
+
+            auction.Version++;
+            await unitOfWork.SaveChangesAsync();
+            await notifier.StatusChangedAsync(auction.Id, auction.Status.ToString());
+        }
+    }
+
     public async Task ProcessExpiredAuctionsAsync()
     {
         var expired = await auctions.GetExpiredActiveAsync(DateTime.UtcNow);
@@ -53,6 +83,7 @@ public class AuctionFinalizerService(
             // Un save por subasta :si una liquidacion falla, las anteriores ya
             // quedaron confirmadas y solo esta se reintenta en el proximo tick.
             await unitOfWork.SaveChangesAsync();
+            await notifier.StatusChangedAsync(auction.Id, auction.Status.ToString());
         }
     }
 
