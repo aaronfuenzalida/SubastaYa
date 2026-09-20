@@ -27,8 +27,9 @@ Puntos clave del diseño:
 - **Anti-sniping**: puja a ≤60s del cierre ⇒ la subasta se extiende 2 minutos (auditado).
 - **Worker** (`BackgroundService`, cada 30s): activa subastas programadas y finaliza las vencidas — con ganador liquida (debita comprador, acredita vendedor), sin pujas las marca desiertas.
 - **Auditoría** (`AuditLogs`): cambios de estado, extensiones anti-sniping, depósitos y pujas rechazadas por concurrencia.
+- **Tiempo real con SignalR** (WebSockets): hub en `/hubs/auctions` con un grupo por subasta; cada puja confirmada y cada cambio de estado del worker se emiten al grupo — los espectadores reciben el evento al instante, sin polling.
 
-**Frontend**: catálogo con filtros/orden/paginación, sala de subasta en vivo (short-polling cada 3s), publicación con vista previa, billetera con historial, panel de actividades y modo oscuro.
+**Frontend**: catálogo con filtros/orden/paginación, sala de subasta en vivo (WebSockets vía SignalR, con reconexión automática), publicación con vista previa, billetera con historial, panel de actividades y modo oscuro.
 
 ## Backend — configuración y ejecución
 
@@ -84,3 +85,8 @@ El script [`subastaYa-backend/scripts/concurrency-test.ps1`](subastaYa-backend/s
 ```
 
 Resultado esperado: `201, 409` — ambas peticiones leen `Version = N`, ambas intentan `UPDATE ... WHERE Version = N`; la base solo se lo concede a una (la otra afecta 0 filas ⇒ `DbUpdateConcurrencyException` ⇒ `409 Conflict`), y su transacción completa (puja + retenciones + asientos) se revierte. El rechazo queda auditado en `AuditLogs`. Si una ronda se serializa (la segunda petición ya ve el precio nuevo ⇒ `201, 400`), el script reintenta solo, hasta 5 veces.
+
+
+------------------------
+Alumno: Aaron Fuenzalida
+------------------------
